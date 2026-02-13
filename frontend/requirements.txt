@@ -1,0 +1,3 @@
+# Frontend dependencies are managed by npm
+# This file is a placeholder for frontend requirements
+# See package.json for actual dependencies
