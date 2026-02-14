@@ -3,10 +3,26 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 
+interface ProjectType {
+  id: number;
+  title: string;
+  type: string;
+  status: string;
+  description?: string;
+  created_at: string;
+  estimated_completion: string;
+  cost: string;
+  files?: { name: string; size: string; type: string }[];
+  compliance_results?: {
+    overall_status: string;
+    agents: Record<string, { status: string; is_compliant: boolean }>;
+  };
+}
+
 export default function ProjectDetails() {
   const router = useRouter()
   const { id } = router.query
-  const [project, setProject] = useState(null)
+  const [project, setProject] = useState<ProjectType | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -135,57 +151,67 @@ export default function ProjectDetails() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-2xl font-bold mb-6">Compliance Results</h2>
           
-          <div className="flex items-center mb-6">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mr-4 ${project.compliance_results.overall_status === 'PASS' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold">Overall Status: {project.compliance_results.overall_status}</h3>
-              <p className="text-gray-600">All compliance checks completed successfully</p>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            {Object.entries(project.compliance_results.agents).map(([agent, result]) => (
-              <div key={agent} className={`p-4 rounded-lg ${result.is_compliant ? 'bg-green-50' : 'bg-red-50'}`}>
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold capitalize">{agent.replace('_', ' ')}</span>
-                  {result.is_compliant ? (
-                    <span className="text-green-600">Compliant</span>
-                  ) : (
-                    <span className="text-red-600">Non-compliant</span>
-                  )}
+          {project.compliance_results ? (
+            <>
+              <div className="flex items-center mb-6">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mr-4 ${project.compliance_results.overall_status === 'PASS' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Overall Status: {project.compliance_results.overall_status}</h3>
+                  <p className="text-gray-600">All compliance checks completed successfully</p>
                 </div>
               </div>
-            ))}
-          </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {Object.entries(project.compliance_results.agents).map(([agent, result]) => (
+                  <div key={agent} className={`p-4 rounded-lg ${result.is_compliant ? 'bg-green-50' : 'bg-red-50'}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold capitalize">{agent.replace('_', ' ')}</span>
+                      {result.is_compliant ? (
+                        <span className="text-green-600">Compliant</span>
+                      ) : (
+                        <span className="text-red-600">Non-compliant</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-gray-500">No compliance results available</div>
+          )}
         </div>
 
         {/* Files */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-2xl font-bold mb-6">Project Files</h2>
-          <div className="space-y-3">
-            {project.files.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center mr-4">
-                    <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+          {project.files && project.files.length > 0 ? (
+            <div className="space-y-3">
+              {project.files.map((file, index) => (
+                <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center mr-4">
+                      <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="font-semibold">{file.name}</div>
+                      <div className="text-sm text-gray-500">{file.size} • {file.type}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-semibold">{file.name}</div>
-                    <div className="text-sm text-gray-500">{file.size} • {file.type}</div>
-                  </div>
+                  <button className="px-4 py-2 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700">
+                    Download
+                  </button>
                 </div>
-                <button className="px-4 py-2 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700">
-                  Download
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-gray-500">No files available</div>
+          )}
         </div>
 
         {/* Timeline */}

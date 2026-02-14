@@ -19,7 +19,7 @@ export default function Login() {
 
         try {
             const response = await auth.login(email, password)
-            
+
             // Store tokens in localStorage
             localStorage.setItem('apex_token', response.access_token)
             localStorage.setItem('apex_refresh_token', response.refresh_token)
@@ -29,7 +29,7 @@ export default function Login() {
                 full_name: response.full_name,
                 role: response.role
             }))
-            
+
             // Redirect based on role
             if (response.role === 'admin') {
                 router.push('/admin')
@@ -62,15 +62,14 @@ export default function Login() {
                 </div>
                 <div className="relative z-10">
                     <Link href="/" className="flex items-center space-x-4">
-                        <div className="w-14 h-14 relative">
-                            <Image 
-                                src="/logo.png" 
-                                alt="Architex Axis Logo" 
-                                fill 
-                                className="object-contain drop-shadow-lg"
-                                priority
-                            />
-                        </div>
+                        <Image
+                            src="/logo.png"
+                            alt="Architex Axis Logo"
+                            width={56}
+                            height={56}
+                            className="object-contain drop-shadow-lg"
+                            priority
+                        />
                         <span className="text-3xl font-bold font-roboto tracking-tight">Architex Axis</span>
                     </Link>
                 </div>
@@ -87,7 +86,7 @@ export default function Login() {
                             <div className="text-sm text-teal-200">Client Satisfaction</div>
                         </div>
                         <div>
-                            <div className="text-3xl font-bold font-roboto"><4h</div>
+                            <div className="text-3xl font-bold font-roboto">{"<4h"}</div>
                             <div className="text-sm text-teal-200">Avg. Turnaround</div>
                         </div>
                     </div>
@@ -103,15 +102,14 @@ export default function Login() {
                     <div className="text-center mb-8">
                         <div className="lg:hidden mb-6">
                             <Link href="/" className="inline-flex items-center space-x-3">
-                                <div className="w-12 h-12 relative">
-                                    <Image 
-                                        src="/logo.png" 
-                                        alt="Architex Axis Logo" 
-                                        fill 
-                                        className="object-contain"
-                                        priority
-                                    />
-                                </div>
+                                <Image
+                                    src="/logo.png"
+                                    alt="Architex Axis Logo"
+                                    width={48}
+                                    height={48}
+                                    className="object-contain"
+                                    priority
+                                />
                                 <span className="text-2xl font-bold font-roboto text-teal-800">Architex Axis</span>
                             </Link>
                         </div>

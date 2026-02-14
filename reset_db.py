@@ -40,11 +40,15 @@ def reset_db():
 
     # Seed data
     db = next(get_db())
+    import bcrypt
+    password = "password123".encode('utf-8')
+    hashed_password = bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8')
+
     try:
         # Create Users
-        admin = User(email="admin@example.com", full_name="Admin User", role=UserRole.ADMIN, is_active=True)
-        client = User(email="client@example.com", full_name="Client User", role=UserRole.CLIENT, is_active=True)
-        freelancer = User(email="freelancer@example.com", full_name="Freelancer User", role=UserRole.FREELANCER, is_active=True)
+        admin = User(email="admin@example.com", full_name="Admin User", role=UserRole.ADMIN, hashed_password=hashed_password, is_active=True)
+        client = User(email="client@example.com", full_name="Client User", role=UserRole.CLIENT, hashed_password=hashed_password, is_active=True)
+        freelancer = User(email="freelancer@example.com", full_name="Freelancer User", role=UserRole.FREELANCER, hashed_password=hashed_password, is_active=True)
         
         db.add_all([admin, client, freelancer])
         db.commit()

@@ -17,6 +17,7 @@ from .routers.auth import router as auth_router
 from .routers.notifications import router as notifications_router
 from .routers.freelancers import router as freelancers_router
 from .routers.time_tracking import router as time_tracking_router
+from .routers.agents import router as agents_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -34,7 +35,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify allowed origins
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -49,6 +50,7 @@ app.include_router(payments_router)
 app.include_router(notifications_router)
 app.include_router(freelancers_router)
 app.include_router(time_tracking_router)
+app.include_router(agents_router)
 
 # Initialize components
 orchestrator = Orchestrator()

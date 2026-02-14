@@ -46,7 +46,7 @@ export default function Layout({ children }: LayoutProps) {
   // Filter nav items based on role
   const getNavItems = () => {
     const baseItems = [{ href: '/', label: 'Home' }]
-    
+
     if (!isAuthenticated) {
       return baseItems
     }
@@ -59,14 +59,14 @@ export default function Layout({ children }: LayoutProps) {
         { href: '/start', label: 'New Project' },
       ]
     }
-    
+
     if (user?.role === 'freelancer') {
       return [
         ...baseItems,
         { href: '/freelancer', label: 'Workspace' },
       ]
     }
-    
+
     if (user?.role === 'admin') {
       return [
         ...baseItems,
@@ -94,15 +94,14 @@ export default function Layout({ children }: LayoutProps) {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 relative">
-                <Image 
-                  src="/logo.png" 
-                  alt="Architex Axis Logo" 
-                  fill 
-                  className="object-contain"
-                  priority
-                />
-              </div>
+              <Image
+                src="/logo.png"
+                alt="Architex Axis Logo"
+                width={40}
+                height={40}
+                className="object-contain"
+                priority
+              />
               <span className="text-xl font-bold font-roboto tracking-tight text-teal-800">
                 Architex Axis
               </span>
@@ -115,8 +114,8 @@ export default function Layout({ children }: LayoutProps) {
                   key={item.href}
                   href={item.href}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive(item.href)
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                 >
                   {item.label}
@@ -214,7 +213,7 @@ export default function Layout({ children }: LayoutProps) {
                     <Link href="/profile" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My Profile</Link>
                     <Link href="/settings" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Settings</Link>
                     <hr className="my-1 border-gray-100" />
-                    <button 
+                    <button
                       onClick={() => { logout(); setUserMenuOpen(false); }}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     >
@@ -251,8 +250,8 @@ export default function Layout({ children }: LayoutProps) {
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`block px-4 py-2 rounded-lg text-sm font-medium ${isActive(item.href)
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-600 hover:bg-gray-50'
                     }`}
                 >
                   {item.label}
@@ -270,7 +269,7 @@ export default function Layout({ children }: LayoutProps) {
                       <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => { logout(); setMobileMenuOpen(false); }}
                     className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
                   >
@@ -279,15 +278,15 @@ export default function Layout({ children }: LayoutProps) {
                 </>
               ) : (
                 <>
-                  <Link 
-                    href="/login" 
+                  <Link
+                    href="/login"
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg"
                   >
                     Sign In
                   </Link>
-                  <Link 
-                    href="/register" 
+                  <Link
+                    href="/register"
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
                   >

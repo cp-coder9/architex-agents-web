@@ -54,12 +54,43 @@ export default function AdminDashboard() {
     // Modals
     const [projectDetailOpen, setProjectDetailOpen] = useState(false)
     const [selectedProject, setSelectedProject] = useState<any>(null)
+    const [projectDetailTab, setProjectDetailTab] = useState('overview')
     const [approveOpen, setApproveOpen] = useState(false)
     const [escalateOpen, setEscalateOpen] = useState(false)
     const [assignOpen, setAssignOpen] = useState(false)
+    const [addTaskOpen, setAddTaskOpen] = useState(false)
     const [freelancerDetailOpen, setFreelancerDetailOpen] = useState(false)
     const [selectedFreelancer, setSelectedFreelancer] = useState<any>(null)
     const [adminNotes, setAdminNotes] = useState('')
+    
+    // New task form
+    const [newTaskName, setNewTaskName] = useState('')
+    const [newTaskHours, setNewTaskHours] = useState(0)
+    const [newTaskHourlyRate, setNewTaskHourlyRate] = useState(450)
+    
+    // Messaging
+    const [messages, setMessages] = useState<{id: number, sender: string, text: string, time: string, isMe: boolean}[]>([
+        { id: 1, sender: 'Client', text: 'Hi, I wanted to check on the progress of my project.', time: '10:30 AM', isMe: false },
+        { id: 2, sender: 'You', text: 'Hello! The project is currently in progress. We should have an update soon.', time: '10:32 AM', isMe: true },
+    ])
+    const [newMessage, setNewMessage] = useState('')
+    
+    // Create Project Modal
+    const [createProjectOpen, setCreateProjectOpen] = useState(false)
+    const [newProject, setNewProject] = useState({
+        title: '',
+        project_type: 'additions',
+        description: '',
+        estimated_cost: 0,
+        estimated_timeline_days: 7,
+    })
+    
+    // Edit Project Modal
+    const [editProjectOpen, setEditProjectOpen] = useState(false)
+    
+    // Agent Logs/Thoughts
+    const [agentLogs, setAgentLogs] = useState<any[]>([])
+    const [agentLogsLoading, setAgentLogsLoading] = useState(false)
 
     const loadData = useCallback(async () => {
         setLoading(true)
@@ -158,10 +189,18 @@ export default function AdminDashboard() {
                         <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
                         <p className="text-gray-500 mt-1">Manage projects, freelancers, payments, and AI agents</p>
                     </div>
-                    <span className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-700 rounded-xl text-sm font-medium border border-red-100">
-                        <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                        <span>Admin Access</span>
-                    </span>
+                    <div className="flex items-center space-x-3">
+                        <button 
+                            onClick={() => setCreateProjectOpen(true)}
+                            className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 transition shadow-sm"
+                        >
+                            + Create Project
+                        </button>
+                        <span className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-700 rounded-xl text-sm font-medium border border-red-100">
+                            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                            <span>Admin Access</span>
+                        </span>
+                    </div>
                 </div>
 
                 {/* Tabs */}
@@ -444,69 +483,272 @@ export default function AdminDashboard() {
                 )}
             </div>
 
-            {/* ── Project Detail Modal ── */}
-            <Modal isOpen={projectDetailOpen} onClose={() => setProjectDetailOpen(false)} title="Project Details" size="lg">
+            {/* ── Project Detail Modal with Tabs ── */}
+            <Modal isOpen={projectDetailOpen} onClose={() => { setProjectDetailOpen(false); setProjectDetailTab('overview') }} title={`Project: ${selectedProject?.title}`} size="xl">
                 {selectedProject && (
-                    <div className="space-y-5">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-gray-900">{selectedProject.title}</h3>
-                            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${(statusConfig[(selectedProject.status || 'pending').toLowerCase()] || statusConfig.pending).bg} ${(statusConfig[(selectedProject.status || 'pending').toLowerCase()] || statusConfig.pending).color}`}>
-                                {(statusConfig[(selectedProject.status || 'pending').toLowerCase()] || statusConfig.pending).label}
-                            </span>
+                    <div>
+                        {/* Tab Navigation */}
+                        <div className="flex space-x-1 border-b border-gray-200 mb-4">
+                            {[
+                                { id: 'overview', label: 'Overview', icon: '📋' },
+                                { id: 'jobcards', label: 'Job Cards', icon: '📁' },
+                                { id: 'ai_review', label: 'AI Agent Review', icon: '🤖' },
+                                { id: 'messages', label: 'Messages', icon: '💬' },
+                                { id: 'progress', label: 'Progress', icon: '📊' },
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setProjectDetailTab(tab.id)}
+                                    className={`px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px ${projectDetailTab === tab.id ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    <span className="mr-1">{tab.icon}</span> {tab.label}
+                                </button>
+                            ))}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">Client</p><p className="text-sm font-semibold">{selectedProject.user?.full_name || 'Client'}</p></div>
-                            <div className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">Type</p><p className="text-sm font-semibold">{selectedProject.project_type}</p></div>
-                            <div className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">Cost</p><p className="text-sm font-semibold text-primary-600">R{(selectedProject.estimated_cost || 0).toLocaleString()}</p></div>
-                            <div className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">Created</p><p className="text-sm font-semibold">{selectedProject.created_at}</p></div>
-                        </div>
+                        {/* ── OVERVIEW TAB ── */}
+                        {projectDetailTab === 'overview' && (
+                            <div className="space-y-5">
+                                <div className="flex items-center justify-between">
+                                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${(statusConfig[(selectedProject.status || 'pending').toLowerCase()] || statusConfig.pending).bg} ${(statusConfig[(selectedProject.status || 'pending').toLowerCase()] || statusConfig.pending).color}`}>
+                                        {(statusConfig[(selectedProject.status || 'pending').toLowerCase()] || statusConfig.pending).label}
+                                    </span>
+                                </div>
 
-                        {/* Admin Notes */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Admin Notes</label>
-                            <textarea
-                                className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-                                rows={3}
-                                placeholder="Add notes about this project…"
-                                value={adminNotes}
-                                onChange={e => setAdminNotes(e.target.value)}
-                            />
-                        </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">Client</p><p className="text-sm font-semibold">{selectedProject.user?.full_name || 'Client'}</p></div>
+                                    <div className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">Type</p><p className="text-sm font-semibold">{selectedProject.project_type}</p></div>
+                                    <div className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">Cost</p><p className="text-sm font-semibold text-primary-600">R{(selectedProject.estimated_cost || 0).toLocaleString()}</p></div>
+                                    <div className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">Created</p><p className="text-sm font-semibold">{selectedProject.created_at}</p></div>
+                                    <div className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">Timeline</p><p className="text-sm font-semibold">{selectedProject.estimated_timeline_days} days</p></div>
+                                    <div className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">Purchased Hours</p><p className="text-sm font-semibold">{selectedProject.purchased_hours || 0} hours</p></div>
+                                </div>
 
-                        {/* Agent Compliance Comments (New) */}
-                        {selectedProject.tasks && selectedProject.tasks.length > 0 && (
-                            <div className="mt-4 pt-4 border-t border-gray-100">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Agent Reviews & Comments</h4>
-                                <div className="space-y-2">
-                                    {selectedProject.tasks.map((t: any) => (
-                                        <div key={t.id} className="bg-gray-50 p-3 rounded-lg text-sm">
-                                            <div className="flex justify-between mb-1">
-                                                <span className="font-medium text-gray-700">{t.task_type}</span>
-                                                <span className={`text-xs px-2 py-0.5 rounded-full ${t.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{t.status}</span>
-                                            </div>
-                                            {t.compliance_comments ? (
-                                                <p className="text-gray-600 mt-1 italic">"{t.compliance_comments}"</p>
-                                            ) : (
-                                                <p className="text-gray-400 text-xs mt-1">No comments logged yet.</p>
-                                            )}
-                                        </div>
-                                    ))}
+                                {/* Description */}
+                                {selectedProject.description && (
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-1">Description</p>
+                                        <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-xl">{selectedProject.description}</p>
+                                    </div>
+                                )}
+
+                                {/* Admin Notes */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Admin Notes</label>
+                                    <textarea
+                                        className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                                        rows={3}
+                                        placeholder="Add notes about this project…"
+                                        value={adminNotes}
+                                        onChange={e => setAdminNotes(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                                    <button onClick={() => { setProjectDetailOpen(false); setAssignOpen(true) }} className="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition">
+                                        Assign Freelancer
+                                    </button>
+                                    <button onClick={() => { setProjectDetailOpen(false); setEscalateOpen(true) }} className="px-4 py-2 text-sm font-medium bg-orange-50 text-orange-600 rounded-xl hover:bg-orange-100 transition">
+                                        Request Revision
+                                    </button>
+                                    <button onClick={() => { setProjectDetailOpen(false); setApproveOpen(true) }} className="px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-xl hover:bg-green-700 transition">
+                                        Approve & Complete
+                                    </button>
                                 </div>
                             </div>
                         )}
 
-                        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
-                            <button onClick={() => { setProjectDetailOpen(false); setAssignOpen(true) }} className="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition">
-                                Assign Freelancer
-                            </button>
-                            <button onClick={() => { setProjectDetailOpen(false); setEscalateOpen(true) }} className="px-4 py-2 text-sm font-medium bg-orange-50 text-orange-600 rounded-xl hover:bg-orange-100 transition">
-                                Request Revision
-                            </button>
-                            <button onClick={() => { setProjectDetailOpen(false); setApproveOpen(true) }} className="px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-xl hover:bg-green-700 transition">
-                                Approve & Complete
-                            </button>
-                        </div>
+                        {/* ── JOB CARDS TAB ── */}
+                        {projectDetailTab === 'jobcards' && (
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <h4 className="text-sm font-semibold text-gray-900">Job Cards & Tasks</h4>
+                                    <button 
+                                        onClick={() => setAddTaskOpen(true)}
+                                        className="px-3 py-1.5 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                                    >
+                                        + Add Task
+                                    </button>
+                                </div>
+                                
+                                {selectedProject.tasks && selectedProject.tasks.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {selectedProject.tasks.map((task: any) => (
+                                            <div key={task.id} className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center space-x-2">
+                                                        <span className="font-semibold text-gray-900">{task.task_type}</span>
+                                                        <span className={`px-2 py-0.5 text-xs rounded-full ${task.status === 'completed' ? 'bg-green-100 text-green-700' : task.status === 'running' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                            {task.status}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-xs text-gray-500">Task #{task.id}</span>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-2 text-xs">
+                                                    <div><p className="text-gray-500">Purchased Hours</p><p className="font-medium">{task.purchased_hours || 0}h</p></div>
+                                                    <div><p className="text-gray-500">Hours Used</p><p className="font-medium">{task.hours_used || 0}h</p></div>
+                                                    <div><p className="text-gray-500">Hourly Rate</p><p className="font-medium">R{task.hourly_rate || 450}/hr</p></div>
+                                                </div>
+                                                {task.assigned_freelancer && (
+                                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                                        <p className="text-xs text-gray-500">Assigned to Freelancer ID: {task.assigned_freelancer}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-gray-400">
+                                        <p>No tasks yet. Click "Add Task" to create one.</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ── AI AGENT REVIEW TAB ── */}
+                        {projectDetailTab === 'ai_review' && (
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-semibold text-gray-900">AI Agent Analysis & Feedback</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {MOCK_AGENTS.map((agent, i) => (
+                                        <div key={i} className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="font-semibold text-gray-900">{agent.name}</span>
+                                                <span className={`w-2 h-2 rounded-full ${agent.status === 'running' ? 'bg-blue-500 animate-pulse' : agent.status === 'error' ? 'bg-red-500' : 'bg-green-500'}`} />
+                                            </div>
+                                            <div className="space-y-1 text-xs">
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-500">Status:</span>
+                                                    <span className="capitalize">{agent.status}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-500">Tasks:</span>
+                                                    <span>{agent.tasks_completed}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-500">Accuracy:</span>
+                                                    <span>{agent.accuracy}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                    <p className="text-sm text-blue-800"><strong>Note:</strong> AI agent analysis is in progress for this project. Results will appear here once available.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── MESSAGES TAB (WhatsApp Style) ── */}
+                        {projectDetailTab === 'messages' && (
+                            <div className="flex flex-col h-96">
+                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Project Messages</h4>
+                                {/* Chat Header */}
+                                <div className="bg-gray-100 p-3 rounded-t-xl flex items-center space-x-3">
+                                    <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                        {selectedProject.user?.full_name?.charAt(0) || 'C'}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900">{selectedProject.user?.full_name || 'Client'}</p>
+                                        <p className="text-xs text-green-500">● Online</p>
+                                    </div>
+                                </div>
+                                
+                                {/* Messages */}
+                                <div className="flex-1 bg-gray-50 overflow-y-auto p-4 space-y-3">
+                                    {messages.map(msg => (
+                                        <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
+                                            <div className={`max-w-[70%] p-3 rounded-xl text-sm ${msg.isMe ? 'bg-green-500 text-white rounded-br-none' : 'bg-white border border-gray-200 rounded-bl-none'}`}>
+                                                <p>{msg.text}</p>
+                                                <p className={`text-xs mt-1 ${msg.isMe ? 'text-green-100' : 'text-gray-400'}`}>{msg.time}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                {/* Input */}
+                                <div className="bg-white p-3 rounded-b-xl border-t border-gray-200 flex space-x-2">
+                                    <input
+                                        type="text"
+                                        value={newMessage}
+                                        onChange={e => setNewMessage(e.target.value)}
+                                        placeholder="Type a message..."
+                                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                    />
+                                    <button 
+                                        onClick={() => {
+                                            if (newMessage.trim()) {
+                                                setMessages([...messages, { id: Date.now(), sender: 'You', text: newMessage, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), isMe: true }])
+                                                setNewMessage('')
+                                            }
+                                        }}
+                                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+                                    >
+                                        Send
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── PROGRESS TAB ── */}
+                        {projectDetailTab === 'progress' && (
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-semibold text-gray-900">Project Progress</h4>
+                                
+                                {/* Overall Progress */}
+                                <div className="bg-gray-50 p-4 rounded-xl">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-sm font-medium text-gray-700">Overall Progress</span>
+                                        <span className="text-sm font-bold text-primary-600">
+                                            {selectedProject.tasks ? Math.round((selectedProject.tasks.filter((t: any) => t.status === 'completed').length / selectedProject.tasks.length) * 100) : 0}%
+                                        </span>
+                                    </div>
+                                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-primary-500 rounded-full transition-all" 
+                                            style={{ width: `${selectedProject.tasks ? (selectedProject.tasks.filter((t: any) => t.status === 'completed').length / selectedProject.tasks.length) * 100 : 0}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Task Breakdown */}
+                                <div className="space-y-2">
+                                    <p className="text-sm font-medium text-gray-700">Task Breakdown</p>
+                                    {selectedProject.tasks && selectedProject.tasks.length > 0 ? (
+                                        selectedProject.tasks.map((task: any) => {
+                                            const progress = task.status === 'completed' ? 100 : task.status === 'running' ? 50 : 0
+                                            return (
+                                                <div key={task.id} className="bg-gray-50 p-3 rounded-lg">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-sm text-gray-700">{task.task_type}</span>
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full ${task.status === 'completed' ? 'bg-green-100 text-green-700' : task.status === 'running' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                            {task.status}
+                                                        </span>
+                                                    </div>
+                                                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div className={`h-full rounded-full ${task.status === 'completed' ? 'bg-green-500' : task.status === 'running' ? 'bg-blue-500' : 'bg-gray-300'}`} style={{ width: `${progress}%` }} />
+                                                    </div>
+                                                </div>
+                                            )
+                                        })
+                                    ) : (
+                                        <p className="text-sm text-gray-400">No tasks to track.</p>
+                                    )}
+                                </div>
+
+                                {/* Time Stats */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-gray-50 p-3 rounded-xl">
+                                        <p className="text-xs text-gray-500">Total Purchased</p>
+                                        <p className="text-lg font-bold text-gray-900">{selectedProject.purchased_hours || 0}h</p>
+                                    </div>
+                                    <div className="bg-gray-50 p-3 rounded-xl">
+                                        <p className="text-xs text-gray-500">Hours Used</p>
+                                        <p className="text-lg font-bold text-gray-900">{selectedProject.hours_used || 0}h</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </Modal>
@@ -593,6 +835,176 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* ── Add Task Modal ── */}
+            <Modal isOpen={addTaskOpen} onClose={() => { setAddTaskOpen(false); setNewTaskName(''); setNewTaskHours(0); setNewTaskHourlyRate(450) }} title="Add New Task" size="md">
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Task Name</label>
+                        <input
+                            type="text"
+                            value={newTaskName}
+                            onChange={e => setNewTaskName(e.target.value)}
+                            placeholder="e.g., Wall Analysis, Compliance Check"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Hours Required</label>
+                            <input
+                                type="number"
+                                value={newTaskHours}
+                                onChange={e => setNewTaskHours(Number(e.target.value))}
+                                placeholder="0"
+                                min="0"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Hourly Rate (ZAR)</label>
+                            <input
+                                type="number"
+                                value={newTaskHourlyRate}
+                                onChange={e => setNewTaskHourlyRate(Number(e.target.value))}
+                                placeholder="450"
+                                min="0"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            />
+                        </div>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-xs text-gray-500">Estimated Cost</p>
+                        <p className="text-lg font-bold text-primary-600">R{(newTaskHours * newTaskHourlyRate).toLocaleString()}</p>
+                    </div>
+                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                        <button 
+                            onClick={() => { setAddTaskOpen(false); setNewTaskName(''); setNewTaskHours(0); setNewTaskHourlyRate(450) }}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={() => {
+                                if (newTaskName.trim() && newTaskHours > 0) {
+                                    setToast({ message: `Task "${newTaskName}" added to project!`, type: 'success' })
+                                    setAddTaskOpen(false)
+                                    setNewTaskName('')
+                                    setNewTaskHours(0)
+                                    setNewTaskHourlyRate(450)
+                                } else {
+                                    setToast({ message: 'Please enter task name and hours', type: 'warning' })
+                                }
+                            }}
+                            className="px-4 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                        >
+                            Add Task
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* ── Create Project Modal ── */}
+            <Modal isOpen={createProjectOpen} onClose={() => { setCreateProjectOpen(false); setNewProject({ title: '', project_type: 'additions', description: '', estimated_cost: 0, estimated_timeline_days: 7 }) }} title="Create New Project" size="lg">
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Project Title</label>
+                        <input
+                            type="text"
+                            value={newProject.title}
+                            onChange={e => setNewProject({ ...newProject, title: e.target.value })}
+                            placeholder="e.g., Residential Extension - Sandton"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Project Type</label>
+                        <select
+                            value={newProject.project_type}
+                            onChange={e => setNewProject({ ...newProject, project_type: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                            <option value="additions">Additions & Alterations</option>
+                            <option value="new_drawing">New Building Drawings</option>
+                            <option value="compliance_check">Compliance Check</option>
+                            <option value="regulatory_query">Regulatory Query</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea
+                            value={newProject.description}
+                            onChange={e => setNewProject({ ...newProject, description: e.target.value })}
+                            placeholder="Describe the project details..."
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Cost (ZAR)</label>
+                            <input
+                                type="number"
+                                value={newProject.estimated_cost}
+                                onChange={e => setNewProject({ ...newProject, estimated_cost: Number(e.target.value) })}
+                                placeholder="0"
+                                min="0"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Timeline (Days)</label>
+                            <input
+                                type="number"
+                                value={newProject.estimated_timeline_days}
+                                onChange={e => setNewProject({ ...newProject, estimated_timeline_days: Number(e.target.value) })}
+                                placeholder="7"
+                                min="1"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            />
+                        </div>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                        <p className="text-sm text-blue-800"><strong>Note:</strong> This will create a new project in the system. The client will need to be assigned and payment will be required before work begins.</p>
+                    </div>
+                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                        <button 
+                            onClick={() => { setCreateProjectOpen(false); setNewProject({ title: '', project_type: 'additions', description: '', estimated_cost: 0, estimated_timeline_days: 7 }) }}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={() => {
+                                if (newProject.title.trim()) {
+                                    // Create the project
+                                    const newId = Math.max(...projects.map((p: any) => p.id)) + 1
+                                    const project = {
+                                        id: newId,
+                                        title: newProject.title,
+                                        project_type: newProject.project_type,
+                                        description: newProject.description,
+                                        estimated_cost: newProject.estimated_cost,
+                                        estimated_timeline_days: newProject.estimated_timeline_days,
+                                        status: 'pending',
+                                        created_at: new Date().toISOString().split('T')[0],
+                                        user: { full_name: 'Unassigned Client' }
+                                    }
+                                    setProjects([project, ...projects])
+                                    setToast({ message: `Project "${newProject.title}" created successfully!`, type: 'success' })
+                                    setCreateProjectOpen(false)
+                                    setNewProject({ title: '', project_type: 'additions', description: '', estimated_cost: 0, estimated_timeline_days: 7 })
+                                } else {
+                                    setToast({ message: 'Please enter a project title', type: 'warning' })
+                                }
+                            }}
+                            className="px-4 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                        >
+                            Create Project
+                        </button>
+                    </div>
+                </div>
             </Modal>
 
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

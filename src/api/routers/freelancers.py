@@ -6,7 +6,7 @@ from typing import List
 import logging
 
 from ...db.connection import get_db
-from ...db.schema import FreelancerProfile, User, UserRole, Task, AgentStatus
+from ...db.schema import FreelancerProfile, User, UserRole, Task, AgentStatus, Notification, Project, ProjectStatus
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/freelancers", tags=["freelancers"])
@@ -76,8 +76,42 @@ async def accept_task(
     if not freelancer_id:
         raise HTTPException(status_code=400, detail="freelancer_id required")
 
+    # Get freelancer info
+    freelancer_profile = db.query(FreelancerProfile).filter(FreelancerProfile.id == freelancer_id).first()
+    freelancer_name = freelancer_profile.user.full_name if freelancer_profile and freelancer_profile.user else "Unknown Freelancer"
+
     task.assigned_freelancer = freelancer_id
     task.status = AgentStatus.RUNNING
+    
+    # Update project status to in_progress
+    project = db.query(Project).filter(Project.id == task.project_id).first()
+    if project:
+        project.status = ProjectStatus.IN_PROGRESS
+        
+        # Create notification for client
+        client_notification = Notification(
+            user_id=project.user_id,
+            project_id=project.id,
+            title="Freelancer Accepted Your Project",
+            message=f"{freelancer_name} has accepted the task for project '{project.title}'. The project is now in progress.",
+            type="success",
+            is_read=False
+        )
+        db.add(client_notification)
+        
+        # Find admin users and notify them
+        admin_users = db.query(User).filter(User.role == UserRole.ADMIN).all()
+        for admin in admin_users:
+            admin_notification = Notification(
+                user_id=admin.id,
+                project_id=project.id,
+                title="Freelancer Accepted Task",
+                message=f"{freelancer_name} has accepted a task for project '{project.title}' (ID: {project.id}).",
+                type="info",
+                is_read=False
+            )
+            db.add(admin_notification)
+    
     db.commit()
     db.refresh(task)
 

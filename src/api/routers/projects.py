@@ -118,11 +118,6 @@ async def create_project(
             status=AgentStatus.PENDING,
             priority=1,
             purchased_hours=est_days * 2, # Rough estimate for review
-            # description is not in Task model based on schema provided, 
-            # checking schema again... schema.py Task has: task_type, status, priority, assigned_agent/freelancer, result, compliance_comments, error_message, purchased/used hours. 
-            # It does NOT have description. The original code had it, likely causing error too?
-            # Wait, I checked schema.py in step 983, Task does NOT have description.
-            # So passing description="..." to Task() would FAIL.
         )
         # Fix: Remove description from Task init
         
