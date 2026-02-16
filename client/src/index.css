@@ -1,26 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --background: 0 0% 100%;
+  --foreground: 171 83% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 171 83% 12%;
+  --primary: 170 73% 34%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 174 43% 92%;
+  --secondary-foreground: 171 83% 12%;
+  --muted: 180 17% 96%;
+  --muted-foreground: 171 32% 32%;
+  --accent: 174 43% 92%;
+  --accent-foreground: 171 83% 12%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 173 26% 84%;
+  --input: 173 26% 84%;
+  --ring: 170 73% 34%;
+}
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+* {
+  @apply border-border;
 }
 
 body {
+  @apply bg-background text-foreground font-sans;
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-black text-foreground;
 }
