@@ -10,3 +10,7 @@
 node_modules
 .npm-cache
 
+server/uploads
+server/data
+server/dev.db
+server/server/uploads

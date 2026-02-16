@@ -3,21 +3,44 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { registerUser } from '../lib/api';
+import { saveAuth } from '../lib/auth';
+import { getDashboardPath } from '../lib/navigation';
 
 export default function OnboardingPage() {
     const navigate = useNavigate();
-    // const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        password: '',
         projectType: 'compliance',
     });
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: Register user and create project
-        console.log('Form submitted:', formData);
-        navigate('/dashboard');
+        setError(null);
+        setLoading(true);
+
+        try {
+            const response = await registerUser({
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+            });
+            saveAuth({
+                token: response.token,
+                email: response.user.email,
+                name: response.user.name,
+                role: response.user.role,
+            });
+            navigate(getDashboardPath(response.user.role));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Registration failed.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -35,7 +58,9 @@ export default function OnboardingPage() {
                                 placeholder="John Doe"
                                 required
                                 value={formData.name}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                    setFormData({ ...formData, name: e.target.value })
+                                }
                             />
                         </div>
                         <div className="space-y-2">
@@ -45,7 +70,21 @@ export default function OnboardingPage() {
                                 placeholder="john@example.com"
                                 required
                                 value={formData.email}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, email: e.target.value })}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                    setFormData({ ...formData, email: e.target.value })
+                                }
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Password</label>
+                            <Input
+                                type="password"
+                                placeholder="Create a password"
+                                required
+                                value={formData.password}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                    setFormData({ ...formData, password: e.target.value })
+                                }
                             />
                         </div>
                         <div className="space-y-2">
@@ -53,15 +92,18 @@ export default function OnboardingPage() {
                             <select
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 value={formData.projectType}
-                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, projectType: e.target.value })}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                    setFormData({ ...formData, projectType: e.target.value })
+                                }
                             >
                                 <option value="compliance">Plan Compliance Check</option>
                                 <option value="drawing">New Architectural Drawing</option>
                                 <option value="alteration">Additions & Alterations</option>
                             </select>
                         </div>
-                        <Button type="submit" className="w-full">
-                            Create Account & Continue
+                        {error && <p className="text-sm text-red-500">{error}</p>}
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            {loading ? 'Creating account...' : 'Create Account & Continue'}
                         </Button>
                     </form>
                 </CardContent>
